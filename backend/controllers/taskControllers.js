@@ -3,7 +3,7 @@ const asyncHander = require('express-async-handler');
 const Task = require('../models/taskModel');
 
 const getTasks = asyncHander(async (req, res) => {
-    const tasks = await Task.find();
+    const tasks = await Task.find({ user: req.user.id });
     res.status(200).json(tasks);
 });
 
@@ -12,7 +12,7 @@ const setTask = asyncHander(async (req, res) => {
         res.status(400)
         throw new Error('Please enter a text');
     }
-    const task = await Task.create({ text: req.body.text })
+    const task = await Task.create({ text: req.body.text, user: req.user.id })
     res.status(200).json(task)
 });
 
@@ -21,6 +21,15 @@ const updateTask = asyncHander(async (req, res) => {
     if (!task) {
         res.status(400);
         throw new Error('Task not found');
+    }
+    const user = await User.findById(req.user.id);
+    if (!user) {
+        res.status(401);
+        throw new Error('No such user found');
+    }
+    if (task.user.toString() !== user.id) {
+        res.status(401);
+        throw new Error('User is not authorized to update');
     }
     const updatedTask = await Task.findByIdAndUpdate(req.params.id, req.body, { new: true });
     res.status(200).json(updatedTask);
@@ -33,6 +42,16 @@ const deleteTask = asyncHander(async (req, res) => {
         res.status(400);
         throw new Error('Task not found');
     }
+    const user = await User.findById(req.user.id);
+    if (!user) {
+        res.status(401);
+        throw new Error('No such user found');
+    }
+    if (task.user.toString() !== user.id) {
+        res.status(401);
+        throw new Error('User is not authorized to update');
+    }
+
     await Task.findByIdAndDelete(req.params.id);
     res.status(200).json({ id: req.params.id });
 });

@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
-const mongoose = require('express-async-handler');
-const taskSchema = mongoose.Schema('../models/userModel')
+const asyncHandler = require('express-async-handler');
+const User = require('../models/userModel')
 
 const protect = asyncHandler(async(req, res, next)=>{
     let token;
@@ -17,6 +17,10 @@ const protect = asyncHandler(async(req, res, next)=>{
             throw new Error('You are not authorized');
         }
     }
+    if (!token) {
+    res.status(401);
+    throw new Error('Not authorized, no token');
+}
 });
 
 module.exports = {protect}
